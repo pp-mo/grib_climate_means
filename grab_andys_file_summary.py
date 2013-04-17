@@ -2,6 +2,10 @@
 Created on Apr 16, 2013
 
 @author: itpp
+
+Grib climate-means project.
+Process filelist.lis into database of per-grib-message information.
+
 '''
 import numpy as np
 import os.path
@@ -59,16 +63,22 @@ def read_andys_listfile_datastrings(file):
 def gribmsg_data_as_recarray(listfile_path):
     with open(listfile_path) as f:
         data_strings, column_names = read_andys_listfile_datastrings(f)
-    return np.core.records.fromrecords(data_strings, names=column_names)
+    records = np.core.records.fromrecords(data_strings,
+                                          names=column_names)
+    return records
 
-climate_dir_spec = ['/', 'project', 'avd', 'means']
-summary_location_spec = ['example_messages']
-summary_file_name = 'file_list.lis'
-summary_file_spec = climate_dir_spec + summary_location_spec + [summary_file_name]
-summary_file_path = os.path.join(*summary_file_spec)
+# Original location
+#_climate_dir_spec = ['/', 'project', 'avd', 'means']
+#_summary_location_spec = ['example_messages']
+#default_summary_dirspec = _climate_dir_spec + _summary_location_spec
+default_summary_dirspec = ['/', 'home', 'h05', 'itpp', 'Iris',
+                           'climate_means', 'message_info_backup']
+default_summary_file_name = 'file_list.lis'
+default_summary_file_spec = default_summary_dirspec + [default_summary_file_name]
+default_summary_file_path = os.path.join(*default_summary_file_spec)
 
-if __name__ == '__main__':
-    data_recs = gribmsg_data_as_recarray(summary_file_path)
+def print_summary():
+    data_recs = gribmsg_data_as_recarray(default_summary_file_path)
 
     shortnames = set(data_recs.shortName)
     data_bynames = {shortname: data_recs[np.where(data_recs.shortName == shortname)]
@@ -100,4 +110,6 @@ if __name__ == '__main__':
             print "  {key} values : {set}".format(key=keyname,
                                                   set=key_values)
 
+if __name__ == '__main__':
+    print_summary()
     t_dbg = 0
