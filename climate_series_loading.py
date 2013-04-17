@@ -15,9 +15,6 @@ import os
 import os.path
 
 import iris
-import iris.exceptions
-import iris.coord_categorisation
-import iris.analysis
 
 # local modules
 import grab_andys_file_summary as gafs
