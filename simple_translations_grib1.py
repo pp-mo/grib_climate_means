@@ -13,6 +13,10 @@ This to be replaced by more generic methods ASAP
 '''
 import numpy as np
 
+# The Grib1 edition, table2version and centrecode are diagnostic for the ones
+# we want to translate here.
+ECMWF_DEFAULT_GRIB1_EDITION = 1
+
 GRIB1_TABLE2VERSIONS = {
     'non_local': 0,
     'ecmwf_local': 128,
@@ -20,8 +24,11 @@ GRIB1_TABLE2VERSIONS = {
 
 GRIB1_CENTRECODES = {'ecmwf': 98}
 
-#NOTE: these match terms in Andy's listfile -- see "grab_andys_file_summary.py"
-GRIB1_LEVELTYPES = {'surface': 1, 'isobaricInhPa': 100}
+#
+# These probably don't belong here ?
+#
+##NOTE: these match terms in Andy's listfile -- see "grab_andys_file_summary.py"
+#GRIB1_LEVELTYPES = {'surface': 1, 'isobaricInhPa': 100}
 
 class Grib1Code(object):
     main_names = ['edition', 'table2version', 'centre', 'param', 'longname']
@@ -38,30 +45,32 @@ class Grib1Code(object):
     def as_list(self):
         return [getattr(self, name) for name in self.all_names]
 
+ECMWF_GRIB1_LOCALCODE_NAME_PREFIX = 'ecmwf_grib1_local__'
 
 class EcmwfLocalGrib1Code(Grib1Code):
-    _ecg1 = 'ecmwf_grib1_local__'
     def __init__(self, param, longname,
-                 edition=1,
+                 edition=ECMWF_DEFAULT_GRIB1_EDITION,
                  table2version=GRIB1_TABLE2VERSIONS['ecmwf_local'],
                  centre=GRIB1_CENTRECODES['ecmwf'],
                  **kwargs
                  ):
         super(EcmwfLocalGrib1Code, self).__init__(
             param=param,
-            longname=self._ecg1 + longname,
+            longname=ECMWF_GRIB1_LOCALCODE_NAME_PREFIX + longname,
             edition=edition,
             table2version=table2version,
             centre=centre,
             **kwargs)
 
-GRIB1_CODE_TRANSLATIONS = []
+_GRIB1_CODE_TRANSLATIONS_LIST = []
 
 def add_ec_grib1(*args, **kwargs):
-    global GRIB1_CODE_TRANSLATIONS
+    global _GRIB1_CODE_TRANSLATIONS_LIST
     newcode = EcmwfLocalGrib1Code(*args, **kwargs)
-    GRIB1_CODE_TRANSLATIONS.append(newcode)
+    _GRIB1_CODE_TRANSLATIONS_LIST.append(newcode)
 
+# Add all the codes we're interested in
+# Use the set_height key to interpret codes that imply an AGL height
 add_ec_grib1(186, 'low_cloud')
 add_ec_grib1(187, 'medium_cloud')
 add_ec_grib1(187, 'high_cloud')
@@ -87,8 +96,45 @@ add_ec_grib1(131, 'wind_u')
 add_ec_grib1(132, 'wind_v')
 add_ec_grib1(135, 'wind_z')
 
-GRIB1_CODES_ARRAY = np.core.records.fromrecords(
-    [code.as_list() for code in GRIB1_CODE_TRANSLATIONS],
+# Convert to a recarray for easy searching.
+# NOTE: failed to create by concatenation -- bugs in numpy
+_GRIB1_CODES_ARRAY = np.core.records.fromrecords(
+    [code.as_list() for code in _GRIB1_CODE_TRANSLATIONS_LIST],
     names=Grib1Code.all_names)
 
-t_dbg =0
+
+def identify_grib1_key(edition, table2version, centre, param):
+    result_array = _GRIB1_CODES_ARRAY[
+        np.where(np.logical_and(
+            _GRIB1_CODES_ARRAY.edition == edition,
+            np.logical_and(
+                _GRIB1_CODES_ARRAY.table2version == table2version,
+                np.logical_and(_GRIB1_CODES_ARRAY.centre == centre,
+                               _GRIB1_CODES_ARRAY.param == param))))]
+    n_results = len(result_array)
+    if n_results != 1:
+        raise ValueError('Ecmwf grib1 lookup for param \'{:s}\' '
+                         'found {:d} matches'.format(param, n_results))
+    return result_array[0]
+
+def test():
+    test_param = 186
+    test_name = ECMWF_GRIB1_LOCALCODE_NAME_PREFIX + 'low_cloud'
+    testcode = EcmwfLocalGrib1Code(9999, '__junk__')
+    testrec = identify_grib1_key(
+        edition=ECMWF_DEFAULT_GRIB1_EDITION,
+        table2version=GRIB1_TABLE2VERSIONS['ecmwf_local'],
+        centre=GRIB1_CENTRECODES['ecmwf'],
+        param=test_param)
+    assert testrec.longname == test_name
+    assert np.isnan(testrec.set_height)
+
+
+#
+# Now do similar to translate ECMWF local-table phenomena into GRIB2 codes.
+#
+
+if __name__ == '__main__':
+    test()
+    print '..Done ok.'
+    t_dbg = 0

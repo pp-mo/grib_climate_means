@@ -60,13 +60,6 @@ def read_andys_listfile_datastrings(file):
 
     return data, columns
 
-def gribmsg_data_as_recarray(listfile_path):
-    with open(listfile_path) as f:
-        data_strings, column_names = read_andys_listfile_datastrings(f)
-    records = np.core.records.fromrecords(data_strings,
-                                          names=column_names)
-    return records
-
 # Original location
 #_climate_dir_spec = ['/', 'project', 'avd', 'means']
 #_summary_location_spec = ['example_messages']
@@ -77,8 +70,15 @@ default_summary_file_name = 'file_list.lis'
 default_summary_file_spec = default_summary_dirspec + [default_summary_file_name]
 default_summary_file_path = os.path.join(*default_summary_file_spec)
 
+def gribmsg_data_as_recarray(listfile_path=default_summary_file_path):
+    with open(listfile_path) as f:
+        data_strings, column_names = read_andys_listfile_datastrings(f)
+    records = np.core.records.fromrecords(data_strings,
+                                          names=column_names)
+    return records
+
 def print_summary():
-    data_recs = gribmsg_data_as_recarray(default_summary_file_path)
+    data_recs = gribmsg_data_as_recarray()
 
     shortnames = set(data_recs.shortName)
     data_bynames = {shortname: data_recs[np.where(data_recs.shortName == shortname)]
