@@ -137,10 +137,26 @@ def enumerate_all_results():
     return results
 
 
-def test():
-    results = enumerate_all_results()
-    print '\n'.join([str(entry) for entry in results])
+def pickout_spec(param, level=None):
+    aspecs = np.array(enumerate_all_results())
+    aspecs = aspecs[np.where(aspecs[:, 0] == str(param))]
+    if level is not None:
+        aspecs = aspecs[np.where(aspecs[:,1 ] == str(level))]
+    assert aspecs.shape[1] == 3
+    n_found = aspecs.shape[0]
+    if n_found != 1:
+        raise ValueError('Pickout(param={}, level={}) '
+                         'found {} results instead of 1 ?'.format(
+                             param, level, n_found))
+    return aspecs[0]
 
+
+def test():
+    spec = pickout_spec(186)
+    cube = cube_for_param_and_level(param=spec[0], level=spec[1])
+#    results = enumerate_all_results()
+#    print '\n'.join([str(entry) for entry in results])
+    t_dbg = 0
 
 if __name__ == '__main__':
     test()

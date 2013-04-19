@@ -89,23 +89,17 @@ def main(output_dirpath=default_output_dirpath,
             print '  saving to \'{}\' ...'.format(file_path)
             iris.save(data_cube, file_path)
 
-def pickout_spec(param, level=None):
-    aspecs = np.array(csl.enumerate_all_results())
-    aspecs = aspecs[np.where(aspecs[:, 0] == str(param))]
-    if level is not None:
-        aspecs = aspecs[np.where(aspecs[:,1 ] == str(level))]
-    assert aspecs.shape[1] == 3
-    n_found = aspecs.shape[0]
-    if n_found != 1:
-        raise ValueError('Pickout(param={}, level={}) '
-                         'found {} results instead of 1 ?'.format(
-                             param, level, n_found))
-    return aspecs[0]
 
 if __name__ == '__main__':
-#    test_series = None
-#    test_series = [pickout_spec(157, 850)]
-#    test_series = [pickout_spec(186)]
-    test_series = [pickout_spec(167)]
+    do_test_only = True
+    if do_test_only:
+#        test_series = None
+#        test_series = [pickout_spec(157, 850)]
+#        test_series = [pickout_spec(186)]
+        test_series = [csl.pickout_spec(167)]
+    else:
+        test_series = None
 #    # NOTE: this fails in grib-pdt-deduce because latest transform is on 'month' not time
-    main(series_specs=test_series)  # , load_from_cubes=True)
+    main(series_specs=test_series,
+         load_from_cubes=False,
+         save_as_cubes=True)
