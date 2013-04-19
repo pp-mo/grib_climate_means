@@ -23,6 +23,7 @@ GRIB1_TABLE2VERSIONS = {
 }
 
 # NOTE: this code already 'interpreted' by grib.py from a number to a string
+#GRIB1_CENTRECODES = {'ecmwf': 'ecmf'}
 GRIB1_CENTRECODES = {'ecmwf': 'ecmf'}
 
 #
@@ -47,7 +48,7 @@ class Grib1Code(object):
     def as_list(self):
         return [getattr(self, name) for name in self.all_names]
 
-ECMWF_GRIB1_LOCALCODE_NAME_PREFIX = 'ecmwf_grib1_local__'
+ECMWF_GRIB1_LOCALCODE_NAME_PREFIX = 'ecmwf_grib1_local'
 
 class EcmwfLocalGrib1Code(Grib1Code):
     def __init__(self, param, longname, units,
@@ -56,9 +57,11 @@ class EcmwfLocalGrib1Code(Grib1Code):
                  centre=GRIB1_CENTRECODES['ecmwf'],
                  **kwargs
                  ):
+        if longname.startswith('__'):
+            longname = ECMWF_GRIB1_LOCALCODE_NAME_PREFIX + longname
         super(EcmwfLocalGrib1Code, self).__init__(
             param=param,
-            longname=ECMWF_GRIB1_LOCALCODE_NAME_PREFIX + longname,
+            longname=longname,
             units=units,
             edition=edition,
             table2version=table2version,
@@ -74,30 +77,30 @@ def add_ec_grib1(*args, **kwargs):
 
 # Add all the codes we're interested in
 # Use the set_height key to interpret codes that imply an AGL height
-add_ec_grib1(186, 'low_cloud', '1')
-add_ec_grib1(187, 'medium_cloud', '1')
-add_ec_grib1(187, 'high_cloud', '1')
-add_ec_grib1(164, 'total_cloud_cover', '1')
-add_ec_grib1(141, 'snow_depth', 'm')
-add_ec_grib1(151, 'mslp', 'hPa')
-add_ec_grib1(165, '10m_wind_x', 'm s-1', set_height=10.0)
-add_ec_grib1(166, '10m_wind_y', 'm s-1', set_height=10.0)
-add_ec_grib1(167, '2m_temp', 'K', set_height=2.0)
-add_ec_grib1(168, '2m_dewpoint', 'K', set_height=2.0)
+add_ec_grib1(186, '__low_cloud', '1')
+add_ec_grib1(187, '__medium_cloud', '1')
+add_ec_grib1(188, '__high_cloud', '1')
+add_ec_grib1(164, '__total_cloud_cover', '1')
+add_ec_grib1(141, '__snow_depth', 'm')
+add_ec_grib1(151, '__mslp', 'hPa')
+add_ec_grib1(165, '__10m_wind_x', 'm s-1', set_height=10.0)
+add_ec_grib1(166, '__10m_wind_y', 'm s-1', set_height=10.0)
+add_ec_grib1(167, '__2m_temp', 'K', set_height=2.0)
+add_ec_grib1(168, '__2m_dewpoint', 'K', set_height=2.0)
 
-add_ec_grib1(59, 'cape', 'J Kg-1')
-add_ec_grib1(174, 'albedo', '1')
-add_ec_grib1(34, 'sst', 'K')
-add_ec_grib1(31, 'sea_ice_cover', '1')
-add_ec_grib1(173, 'surface_roughness', 'm')
-add_ec_grib1(235, 'skin_temperature', 'K')
+add_ec_grib1(59, '__cape', 'J Kg-1')
+add_ec_grib1(174, '__albedo', '1')
+add_ec_grib1(34, '__sst', 'K')
+add_ec_grib1(31, '__sea_ice_cover', '1')
+add_ec_grib1(173, '__surface_roughness', 'm')
+add_ec_grib1(235, '__skin_temperature', 'K')
 
-add_ec_grib1(157, 'relative_humidity', '1')  # actually, this is %ge.  No unit
-add_ec_grib1(130, 'temperature', 'K')
-add_ec_grib1(129, 'geopotential', 'm^2 s-2')
-add_ec_grib1(131, 'wind_u', 'm s-1')
-add_ec_grib1(132, 'wind_v', 'm s-1')
-add_ec_grib1(135, 'wind_z', 'm s-1')
+add_ec_grib1(157, '__relative_humidity', '1')  # actually, this is %ge.  No unit
+add_ec_grib1(130, '__temperature', 'K')
+add_ec_grib1(129, '__geopotential', 'm^2 s-2')
+add_ec_grib1(131, '__wind_u', 'm s-1')
+add_ec_grib1(132, '__wind_v', 'm s-1')
+add_ec_grib1(135, '__wind_z', 'm s-1')
 
 # Convert to a recarray for easy searching.
 # NOTE: failed to create by concatenation -- bugs in numpy
@@ -116,8 +119,8 @@ def identify_grib1_key(edition, table2version, centre, param, debug=False):
                                _GRIB1_CODES_ARRAY.param == param))))]
     n_results = len(result_array)
     if n_results > 1:
-        raise ValueError('Ecmwf grib1 lookup for param \'{:s}\' '
-                         'found {:d} matches'.format(param, n_results))
+        raise ValueError('Ecmwf grib1 lookup for param \'{}\' '
+                         'found {} matches'.format(param, n_results))
     elif n_results == 1:
         result = result_array[0]
     else:
@@ -125,14 +128,22 @@ def identify_grib1_key(edition, table2version, centre, param, debug=False):
         result = None
     if debug:
         r_str = str(result)
-        print 'STG1-identify: edition={} t2v={} centre={}, param={} ==> {:s}'.format(
+        print 'STG1-identify: edition={} t2v={} centre={}, param={} ==> {}'.format(
             edition, table2version, centre, param, r_str)
     return result
 
 
+def identify_known_ecmwf_key(param):
+    return identify_grib1_key(
+        edition=ECMWF_DEFAULT_GRIB1_EDITION,
+        table2version=GRIB1_TABLE2VERSIONS['ecmwf_local'],
+        centre=GRIB1_CENTRECODES['ecmwf'],
+        param=param)
+
+
 def test(debug=False):
     test_param = 141
-    expected_name = ECMWF_GRIB1_LOCALCODE_NAME_PREFIX + 'snow_depth'
+    expected_name = ECMWF_GRIB1_LOCALCODE_NAME_PREFIX + '__snow_depth'
     expected_units = 'm'
     testrec = identify_grib1_key(
         edition=ECMWF_DEFAULT_GRIB1_EDITION,
@@ -144,6 +155,14 @@ def test(debug=False):
     assert testrec.longname == expected_name
     assert testrec.units == expected_units
     assert np.isnan(testrec.set_height)
+
+    testrec2 = identify_known_ecmwf_key(test_param)
+    assert testrec2 != None
+    assert testrec.longname == expected_name
+    assert testrec.units == expected_units
+    assert np.isnan(testrec.set_height)
+    # NOTE: *another* recarrary anomaly -- why does this not work ???
+#    assert testrec2 == testrec
 
 
 if __name__ == '__main__':

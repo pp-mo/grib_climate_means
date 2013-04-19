@@ -19,7 +19,7 @@ import iris
 # local modules
 import grab_andys_file_summary as gafs
 import test_basic_load_and_timings as blt
-
+import simple_translations_grib1 as stg1
 
 # private cache of gafs data
 _gribmsg_data_array = None
@@ -56,10 +56,12 @@ def files_and_constraint_for_param_and_level(param, level):
     if len(msgs) != 360:
         raise Exception(err_prefix
                         + 'Expected 360 results, got {} ?'.format(len(msgs)))
-    param_num = int(param)
-    constraint = iris.AttributeConstraint(indicatorOfParameter=param_num)
+#    param_num = int(param)
+#    constraint = iris.AttributeConstraint(indicatorOfParameter=param_num)
+    grib1_data = stg1.identify_known_ecmwf_key(int(param))
+    constraint = iris.Constraint(grib1_data.longname)
     if len(levels) > 1:
-        level_constraint = iris.Constraint(pressure=level)
+        level_constraint = iris.Constraint(pressure=int(level))
         constraint = constraint & level_constraint
     # list all the files
     file_names = sorted(set(msgs.filename))
@@ -68,8 +70,8 @@ def files_and_constraint_for_param_and_level(param, level):
     return file_paths, constraint
 
 
-def load_callback_add_iop(cube, field, filename):
-    cube.attributes['indicatorOfParameter'] = field.indicatorOfParameter
+#def load_callback_add_iop(cube, field, filename):
+#    cube.attributes['indicatorOfParameter'] = field.indicatorOfParameter
 
 
 def cube_for_param_and_level(param, level=None, debug=True):
@@ -96,9 +98,8 @@ def cube_for_param_and_level(param, level=None, debug=True):
         print '  files = ', files
         print '  constraint = ', constraint
         print 'Loading...'
-    cubes, timer = blt.timeit_raw(files,
-                                  constraint,
-                                  callback=load_callback_add_iop)
+    cubes, timer = blt.timeit_raw(files, constraint)
+#                                  callback=load_callback_add_iop)
     if debug:
         print 'Result : {} cubes'.format(len(cubes))
         print 'Merging...'
@@ -152,8 +153,10 @@ def pickout_spec(param, level=None):
 
 
 def test():
-    spec = pickout_spec(186)
+#    spec = pickout_spec(186)
+    spec = pickout_spec(157, 850)
     cube = cube_for_param_and_level(param=spec[0], level=spec[1])
+    print cube
 #    results = enumerate_all_results()
 #    print '\n'.join([str(entry) for entry in results])
     t_dbg = 0

@@ -77,6 +77,8 @@ def main(output_dirpath=default_output_dirpath,
             data_cube = csl.cube_for_param_and_level(param, level)
             print '  aggregating ..'
             data_cube = make_monthly_means_cube(data_cube)
+            print '  result ...'
+            print data_cube
         if save_as_cubes:
             file_path = os.path.join(output_dirpath, cubefile_name)
             print '  saving aggregate to \'{}\' ...'.format(file_path)
@@ -91,14 +93,17 @@ def main(output_dirpath=default_output_dirpath,
 
 
 if __name__ == '__main__':
+    test_series = None
     do_test_only = True
     if do_test_only:
-#        test_series = None
-#        test_series = [pickout_spec(157, 850)]
-#        test_series = [pickout_spec(186)]
-        test_series = [csl.pickout_spec(167)]
-    else:
-        test_series = None
+        # one of each class
+        test_series = [
+            csl.pickout_spec(157, 850),  # rh on p=850
+            csl.pickout_spec(186),  # low-cloud (~"surface")
+            csl.pickout_spec(167),  # 2-metre temperature : gets height = 2.0m
+            csl.pickout_spec(165),  # 10-metre u-wind : gets height = 10.0m
+        ]
+
 #    # NOTE: this fails in grib-pdt-deduce because latest transform is on 'month' not time
     main(series_specs=test_series,
          load_from_cubes=False,
