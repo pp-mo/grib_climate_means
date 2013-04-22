@@ -77,12 +77,12 @@ def add_ec_grib1(*args, **kwargs):
 
 # Add all the codes we're interested in
 # Use the set_height key to interpret codes that imply an AGL height
-add_ec_grib1(186, '__low_cloud', '1')
-add_ec_grib1(187, '__medium_cloud', '1')
-add_ec_grib1(188, '__high_cloud', '1')
-add_ec_grib1(164, '__total_cloud_cover', '1')
+add_ec_grib1(186, '__low_cloud', '%')
+add_ec_grib1(187, '__medium_cloud', '%')
+add_ec_grib1(188, '__high_cloud', '%')
+add_ec_grib1(164, '__total_cloud_cover', '%')
 add_ec_grib1(141, '__snow_depth', 'm')
-add_ec_grib1(151, '__mslp', 'hPa')
+add_ec_grib1(151, '__mslp', 'Pa')
 add_ec_grib1(165, '__10m_wind_x', 'm s-1', set_height=10.0)
 add_ec_grib1(166, '__10m_wind_y', 'm s-1', set_height=10.0)
 add_ec_grib1(167, '__2m_temp', 'K', set_height=2.0)
@@ -95,12 +95,12 @@ add_ec_grib1(31, '__sea_ice_cover', '1')
 add_ec_grib1(173, '__surface_roughness', 'm')
 add_ec_grib1(235, '__skin_temperature', 'K')
 
-add_ec_grib1(157, '__relative_humidity', '1')  # actually, this is %ge.  No unit
+add_ec_grib1(157, '__relative_humidity', '%')
 add_ec_grib1(130, '__temperature', 'K')
 add_ec_grib1(129, '__geopotential', 'm^2 s-2')
 add_ec_grib1(131, '__wind_u', 'm s-1')
 add_ec_grib1(132, '__wind_v', 'm s-1')
-add_ec_grib1(135, '__wind_z', 'm s-1')
+add_ec_grib1(135, '__wind_z', 'Pa s-1')  # a *pressure* velocity
 
 # Convert to a recarray for easy searching.
 # NOTE: failed to create by concatenation -- bugs in numpy

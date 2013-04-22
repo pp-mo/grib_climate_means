@@ -100,11 +100,14 @@ if __name__ == '__main__':
         test_series = [
             csl.pickout_spec(157, 850),  # rh on p=850
             csl.pickout_spec(186),  # low-cloud (~"surface")
+            csl.pickout_spec(151),  # mslp
             csl.pickout_spec(167),  # 2-metre temperature : gets height = 2.0m
             csl.pickout_spec(165),  # 10-metre u-wind : gets height = 10.0m
+            csl.pickout_spec(141),  #  snow_depth
         ]
 
 #    # NOTE: this fails in grib-pdt-deduce because latest transform is on 'month' not time
     main(series_specs=test_series,
-         load_from_cubes=False,
-         save_as_cubes=True)
+#         load_from_cubes=False, save_as_cubes=True
+         load_from_cubes=True, save_as_cubes=False
+         )
