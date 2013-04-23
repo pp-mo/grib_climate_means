@@ -19,7 +19,8 @@ import iris
 # local modules
 import grab_andys_file_summary as gafs
 import test_basic_load_and_timings as blt
-import simple_translations_grib1 as stg1
+
+from grib_translations import grib1_translate
 
 # private cache of gafs data
 _gribmsg_data_array = None
@@ -58,7 +59,7 @@ def files_and_constraint_for_param_and_level(param, level):
                         + 'Expected 360 results, got {} ?'.format(len(msgs)))
 #    param_num = int(param)
 #    constraint = iris.AttributeConstraint(indicatorOfParameter=param_num)
-    grib1_data = stg1.identify_known_ecmwf_key(int(param))
+    grib1_data = grib1_translate.identify_known_ecmwf_key(int(param))
     constraint = iris.Constraint(grib1_data.longname)
     if len(levels) > 1:
         level_constraint = iris.Constraint(pressure=int(level))
@@ -153,6 +154,8 @@ def pickout_spec(param, level=None):
 
 
 def test():
+    print '\n'.join([str(x) for x in enumerate_all_results()])
+
 #    spec = pickout_spec(186)
     spec = pickout_spec(157, 850)
     cube = cube_for_param_and_level(param=spec[0], level=spec[1])
@@ -160,8 +163,6 @@ def test():
 #    results = enumerate_all_results()
 #    print '\n'.join([str(entry) for entry in results])
     t_dbg = 0
-
-    print '\n'.join([str(x) for x in enumerate_all_results()])
 
 
 if __name__ == '__main__':

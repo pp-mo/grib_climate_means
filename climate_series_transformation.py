@@ -58,7 +58,7 @@ def hack_forecast_times(cube):
         )
     cube.add_aux_coord(co_fp, 0)
 
-default_output_dirpath = '/net/home/h05/itpp/Iris/climate_means/temp_outputs'
+default_output_dirpath = '/net/home/h05/itpp/Iris/climate_means/temp_outputs/temp_realmeta'
 
 def main(output_dirpath=default_output_dirpath,
          series_specs=None,
@@ -134,6 +134,6 @@ if __name__ == '__main__':
 
     main(series_specs=test_series,
 #         load_from_cubes=False, save_as_cubes=True, save_as_grib=False
-#         load_from_cubes=True, save_as_cubes=False, save_as_grib=False
-         save_as_cubes=True
+         load_from_cubes=True, save_as_cubes=False, save_as_grib=True
+#         save_as_cubes=True
          )
