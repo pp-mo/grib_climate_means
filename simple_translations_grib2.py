@@ -51,7 +51,7 @@ add_grib2_translation('__10m_wind_y', 0, 2, 3, 'm s-1')
 add_grib2_translation('__2m_temp', 0, 0, 0, 'K')
 add_grib2_translation('__2m_dewpoint', 0, 0, 6, 'K')
 
-add_grib2_translation('__cape', 0, 7, 6, 'J Kg-1')
+add_grib2_translation('__cape', 0, 7, 6, 'J kg-1')
 add_grib2_translation('__albedo', 0, 19, 1, '%')
 add_grib2_translation('__sst', 10, 3, 0, 'K')
 add_grib2_translation('__sea_ice_cover', 10, 2, 0, '1')
@@ -65,6 +65,15 @@ add_grib2_translation('__geopotential', 0, 3, 4, 'm^2 s-2')
 add_grib2_translation('__wind_u', 0, 2, 2, 'm s-1')
 add_grib2_translation('__wind_v', 0, 2, 3, 'm s-1')
 add_grib2_translation('__wind_z', 0, 2, 8, 'Pa s-1')  # a *pressure* velocity
+
+_do_real_names = stg1._do_real_names
+#_do_real_names = False
+if _do_real_names:
+    # Replace some of the names with real standard_names
+    for fakename, newname in stg1.fake_to_real_names.iteritems():
+        fakename = stg1.ECMWF_GRIB1_LOCALCODE_NAME_PREFIX + fakename
+        entry, = [x for x in _GRIB2_NAME_TRANSLATIONS_LIST if x.name == fakename]
+        entry.name = newname
 
 # Convert to a recarray for easy searching.
 # NOTE: failed to create by concatenation -- bugs in numpy
@@ -97,14 +106,29 @@ def test(debug=False):
                         'parameterCategory': 1,
                         'parameterNumber': 11,
                         'units': 'm'}
-    testrec = identify_grib2_coding(test_name)
+    testrec = identify_grib2_coding(test_name, debug=True)
     assert testrec != None
     for key, expected in expected_results.iteritems():
         got = getattr(testrec, key)
         assert got == expected
 
-    testrec = identify_grib2_coding('completely_made_up')
+    # test a missing one
+    testrec = identify_grib2_coding('completely_made_up', debug=True)
     assert testrec == None
+
+    if _do_real_names:
+        # test a real-name one
+        test_param = 164  # total cloud cover : now aliassed to real-name
+        test_name = 'cloud_area_fraction'
+        expected_results = {'discipline': 0,
+                            'parameterCategory': 6,
+                            'parameterNumber': 1,
+                            'units': '%'}
+        testrec = identify_grib2_coding(test_name, debug=True)
+        assert testrec != None
+        for key, expected in expected_results.iteritems():
+            got = getattr(testrec, key)
+            assert got == expected
 
 
 if __name__ == '__main__':

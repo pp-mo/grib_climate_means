@@ -88,7 +88,7 @@ add_ec_grib1(166, '__10m_wind_y', 'm s-1', set_height=10.0)
 add_ec_grib1(167, '__2m_temp', 'K', set_height=2.0)
 add_ec_grib1(168, '__2m_dewpoint', 'K', set_height=2.0)
 
-add_ec_grib1(59, '__cape', 'J Kg-1')
+add_ec_grib1(59, '__cape', 'J kg-1')
 add_ec_grib1(174, '__albedo', '1')
 add_ec_grib1(34, '__sst', 'K')
 add_ec_grib1(31, '__sea_ice_cover', '1')
@@ -101,6 +101,27 @@ add_ec_grib1(129, '__geopotential', 'm^2 s-2')
 add_ec_grib1(131, '__wind_u', 'm s-1')
 add_ec_grib1(132, '__wind_v', 'm s-1')
 add_ec_grib1(135, '__wind_z', 'Pa s-1')  # a *pressure* velocity
+
+_do_real_names = False
+#_do_real_names = True
+if _do_real_names:
+    # Replace some of the names with real standard_names
+    fake_to_real_names = {
+        '__low_cloud': 'low_type_cloud_area_fraction',
+        '__medium_cloud': 'medium_type_cloud_area_fraction',
+        '__high_cloud': 'high_type_cloud_area_fraction',
+        '__total_cloud_cover': 'cloud_area_fraction',
+        '__10m_wind_x': 'eastward_wind',
+        '__10m_wind_y': 'northward_wind',
+        '__2m_temp': 'air_temperature',
+        '__wind_u': 'eastward_wind',
+        '__wind_v': 'northward_wind',
+    }
+
+    for fakename, newname in fake_to_real_names.iteritems():
+        fakename = ECMWF_GRIB1_LOCALCODE_NAME_PREFIX + fakename
+        entry, = [x for x in _GRIB1_CODE_TRANSLATIONS_LIST if x.longname == fakename]
+        entry.longname = newname
 
 # Convert to a recarray for easy searching.
 # NOTE: failed to create by concatenation -- bugs in numpy
@@ -133,12 +154,12 @@ def identify_grib1_key(edition, table2version, centre, param, debug=False):
     return result
 
 
-def identify_known_ecmwf_key(param):
+def identify_known_ecmwf_key(param, debug=False):
     return identify_grib1_key(
         edition=ECMWF_DEFAULT_GRIB1_EDITION,
         table2version=GRIB1_TABLE2VERSIONS['ecmwf_local'],
         centre=GRIB1_CENTRECODES['ecmwf'],
-        param=param)
+        param=param, debug=debug)
 
 
 def test(debug=False):
@@ -156,13 +177,42 @@ def test(debug=False):
     assert testrec.units == expected_units
     assert np.isnan(testrec.set_height)
 
-    testrec2 = identify_known_ecmwf_key(test_param)
+    testrec2 = identify_known_ecmwf_key(test_param, debug=True)
     assert testrec2 != None
     assert testrec.longname == expected_name
     assert testrec.units == expected_units
     assert np.isnan(testrec.set_height)
     # NOTE: *another* recarrary anomaly -- why does this not work ???
 #    assert testrec2 == testrec
+
+    # test non-found one
+    test_param = 999
+    testrec = identify_known_ecmwf_key(test_param, debug=True)
+    assert testrec is None
+
+    # test a set-height case
+    add_ec_grib1(168, '__2m_dewpoint', 'K', set_height=2.0)
+    test_param = 168  # 2m_dewpoint
+    expected_name = ECMWF_GRIB1_LOCALCODE_NAME_PREFIX + '__2m_dewpoint'
+    expected_units = 'K'
+    expected_height = 2.0
+    testrec = identify_known_ecmwf_key(test_param, debug=True)
+    assert testrec != None
+    assert testrec.longname == expected_name
+    assert testrec.units == expected_units
+    assert not np.isnan(testrec.set_height)
+    assert testrec.set_height == expected_height
+
+    if _do_real_names:
+        # test real-name case
+        test_param = 164  # total cloud cover : now aliassed to real-name
+        expected_name = 'cloud_area_fraction'
+        expected_units = '%'
+        testrec = identify_known_ecmwf_key(test_param, debug=True)
+        assert testrec != None
+        assert testrec.longname == expected_name
+        assert testrec.units == expected_units
+        assert np.isnan(testrec.set_height)
 
 
 if __name__ == '__main__':

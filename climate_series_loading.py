@@ -161,5 +161,8 @@ def test():
 #    print '\n'.join([str(entry) for entry in results])
     t_dbg = 0
 
+    print '\n'.join([str(x) for x in enumerate_all_results()])
+
+
 if __name__ == '__main__':
     test()

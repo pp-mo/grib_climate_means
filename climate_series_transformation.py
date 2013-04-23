@@ -44,8 +44,10 @@ default_output_dirpath = '/net/home/h05/itpp/Iris/climate_means/temp_outputs'
 
 def main(output_dirpath=default_output_dirpath,
          series_specs=None,
+         save_as_grib=True,
          save_as_cubes=False,
-         load_from_cubes=False):
+         load_from_cubes=False,
+         ):
     """
     Process series to get monthly means cubes, and save these as Grib2.
 
@@ -55,10 +57,12 @@ def main(output_dirpath=default_output_dirpath,
     * series_specs (list):
         A list of triples ((int)param, (int)level, (string)id_name)
         (Default: *all* series).
+    * save_as_grib (bool):
+        Save to Grib2 outputs. (In output directory)
     * save_as_cubes (bool):
-        Save as pickled cubes *instead* of Grib. (In output directory)
+        Save as pickled cubes. (In output directory)
     * load_from_cubes (bool):
-        Load from pickled cubes instead of source. (In output directory)
+        Load from pickled cubes instead of source.
 
     """
     if series_specs is None:
@@ -84,7 +88,7 @@ def main(output_dirpath=default_output_dirpath,
             print '  saving aggregate to \'{}\' ...'.format(file_path)
             with open(file_path, 'w') as f:
                 pickle.dump(data_cube, f)
-        else:
+        if save_as_grib:
             print '  hacking level ..'
             hack_to_make_saveable(data_cube)
             file_path = os.path.join(output_dirpath, gribfile_name)
@@ -94,11 +98,12 @@ def main(output_dirpath=default_output_dirpath,
 
 if __name__ == '__main__':
     test_series = None
-    do_test_only = True
+    do_test_only = False
+#    do_test_only = True
     if do_test_only:
         # one of each class
         test_series = [
-            csl.pickout_spec(157, 850),  # rh on p=850
+#            csl.pickout_spec(157, 850),  # rh on p=850
             csl.pickout_spec(186),  # low-cloud (~"surface")
             csl.pickout_spec(151),  # mslp
             csl.pickout_spec(167),  # 2-metre temperature : gets height = 2.0m
@@ -106,8 +111,8 @@ if __name__ == '__main__':
             csl.pickout_spec(141),  #  snow_depth
         ]
 
-#    # NOTE: this fails in grib-pdt-deduce because latest transform is on 'month' not time
     main(series_specs=test_series,
-#         load_from_cubes=False, save_as_cubes=True
-         load_from_cubes=True, save_as_cubes=False
+#         load_from_cubes=False, save_as_cubes=True, save_as_grib=False
+#         load_from_cubes=True, save_as_cubes=False, save_as_grib=False
+         save_as_cubes=True
          )
