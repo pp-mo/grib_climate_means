@@ -40,6 +40,24 @@ def hack_to_make_saveable(data_cube):
         # fake a level coordinate
         pass
 
+def hack_forecast_times(cube):
+    """ Replace empty forecast_period with a sequence of startyear-months. """
+    cube.remove_coord('forecast_period')
+    co_t = cube.coord('time')
+    # Calculate relative month start-times
+    month_times = co_t.bounds[:, 0]
+    month_times -= month_times[0]
+    # Infer delta-time units from absolute-time units
+    # E.G. 'hours since  YYYY-MM-DD hh:mm:ss' --> 'hours'
+    time_unit = str(co_t.units).split()[0]  
+    # Create new forecast_period coord with month-start-offsets in it
+    co_fp = iris.coords.DimCoord(
+        points=month_times,
+        standard_name='forecast_period',
+        units=time_unit
+        )
+    cube.add_aux_coord(co_fp, 0)
+
 default_output_dirpath = '/net/home/h05/itpp/Iris/climate_means/temp_outputs'
 
 def main(output_dirpath=default_output_dirpath,
@@ -89,6 +107,8 @@ def main(output_dirpath=default_output_dirpath,
             with open(file_path, 'w') as f:
                 pickle.dump(data_cube, f)
         if save_as_grib:
+            print '  fix forecast periods ..'
+            hack_forecast_times(data_cube)
             print '  hacking level ..'
             hack_to_make_saveable(data_cube)
             file_path = os.path.join(output_dirpath, gribfile_name)
