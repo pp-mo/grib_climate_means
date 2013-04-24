@@ -98,17 +98,18 @@ def main(output_dirpath=default_output_dirpath,
 
 if __name__ == '__main__':
     test_series = None
-    do_test_only = False
+    do_test_only = True
 #    do_test_only = True
     if do_test_only:
         # one of each class
         test_series = [
-#            csl.pickout_spec(157, 850),  # rh on p=850
+            csl.pickout_spec(157, 850),  # rh on p=850
             csl.pickout_spec(186),  # low-cloud (~"surface")
             csl.pickout_spec(151),  # mslp
             csl.pickout_spec(167),  # 2-metre temperature : gets height = 2.0m
             csl.pickout_spec(165),  # 10-metre u-wind : gets height = 10.0m
-            csl.pickout_spec(141),  #  snow_depth
+#            csl.pickout_spec(166),  # 10-metre v-wind : gets height = 10.0m
+#            csl.pickout_spec(141),  #  snow_depth
         ]
 
     main(series_specs=test_series,
