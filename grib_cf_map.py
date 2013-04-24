@@ -20,6 +20,14 @@
 
 import collections
 
+#
+# PP CHANGES + NOTES ....
+#   * CAPE had 'Kg', which udunits rejects (wants lowercase "kg")
+#   * dewpoint was missing in both G1 and G2
+#   * "grib_physical _atmosphere_albedo" name has space in
+#   * Why do G1Lparam and G2param contain "edition"? --covered in the name
+#
+
 G2param = collections.namedtuple('G2param', ['edition', 'discipline',
                                              'category', 'number'])
 G1Lparam = collections.namedtuple('G1Lparam', ['edition', 't2version', 'centre',
@@ -41,7 +49,7 @@ GRIB1Local_TO_CF = {
 	G1Lparam(1, 128, 98, 157): CFname("relative_humidity", None, "%"),
 	G1Lparam(1, 128, 98, 164): CFname("cloud_area_fraction", None, 1),
 	G1Lparam(1, 128, 98, 173): CFname("surface_roughness_length", None, "m"),
-	G1Lparam(1, 128, 98, 174): CFname(None, "grib_physical _atmosphere_albedo", 1),
+	G1Lparam(1, 128, 98, 174): CFname(None, "grib_physical_atmosphere_albedo", 1),
 	G1Lparam(1, 128, 98, 186): CFname("low_type_cloud_area_fraction", None, 1),
 	G1Lparam(1, 128, 98, 187): CFname("medium_type_cloud_area_fraction", None, 1),
 	G1Lparam(1, 128, 98, 188): CFname("high_type_cloud_area_fraction", None, 1),
@@ -54,7 +62,8 @@ GRIB1Local_TO_CF = {
 GRIB1LocalConstrained_TO_CF = {
 	G1Lparam(1, 128, 98, 165): (CFname("x_wind", None, "m s-1"), DimensionCoordinate("height", "m", (10,))),
 	G1Lparam(1, 128, 98, 166): (CFname("y_wind", None, "m s-1"), DimensionCoordinate("height", "m", (10,))),
-	G1Lparam(1, 128, 98, 167): (CFname("air_temperature", None, "K"), DimensionCoordinate("height", "m", (2,))),
+    G1Lparam(1, 128, 98, 167): (CFname("air_temperature", None, "K"), DimensionCoordinate("height", "m", (2,))),
+    G1Lparam(1, 128, 98, 168): (CFname("dew_point_temperature", None, "K"), DimensionCoordinate("height", "m", (2,))),
 	}
 
 GRIB2_TO_CF = {
@@ -68,7 +77,7 @@ GRIB2_TO_CF = {
 	G2param(2, 0, 1, 22): CFname(None, "cloud_mixing_ratio", "kg kg-1"),
 	G2param(2, 0, 1, 3): CFname(None, "precipitable_water", "kg m-2"),
 	G2param(2, 0, 14, 0): CFname("atmosphere_mole_content_of_ozone", None, "Dobson"),
-	G2param(2, 0, 19, 1): CFname(None, "grib_physical _atmosphere_albedo", 1),
+	G2param(2, 0, 19, 1): CFname(None, "grib_physical_atmosphere_albedo", 1),
 	G2param(2, 0, 2, 1): CFname("wind_speed", None, "m s-1"),
 	G2param(2, 0, 2, 10): CFname("atmosphere_absolute_vorticity", None, "s-1"),
 	G2param(2, 0, 2, 2): CFname("x_wind", None, "m s-1"),
@@ -98,7 +107,7 @@ GRIB2_TO_CF = {
 CF_TO_GRIB1Local = {
 	CFname("air_pressure_at_sea_level", None, "Pa"):G1Lparam(1, 128, 98, 151),
 	CFname("air_temperature", None, "K"):G1Lparam(1, 128, 98, 130),
-	CFname("atmosphere_specific_convective_available_potential_energy", None, "J kg-1"):G1Lparam(1, 128, 98, 59),
+	CFname("atmosphere_specific_convective_available_potential_energy", None, "J Kg-1"):G1Lparam(1, 128, 98, 59),
 	CFname("cloud_area_fraction", None, 1):G1Lparam(1, 128, 98, 164),
 	CFname("geopotential", None, "m2 s-2"):G1Lparam(1, 128, 98, 129),
 	CFname("high_type_cloud_area_fraction", None, 1):G1Lparam(1, 128, 98, 188),
@@ -112,7 +121,7 @@ CF_TO_GRIB1Local = {
 	CFname("thickness_of_snowfall_amount", None, "m"):G1Lparam(1, 128, 98, 141),
 	CFname("x_wind", None, "m s-1"):G1Lparam(1, 128, 98, 131),
 	CFname("y_wind", None, "m s-1"):G1Lparam(1, 128, 98, 132),
-	CFname(None, "grib_physical _atmosphere_albedo", 1):G1Lparam(1, 128, 98, 174),
+	CFname(None, "grib_physical_atmosphere_albedo", 1):G1Lparam(1, 128, 98, 174),
 	CFname(None, "grib_skin_temperature", "K"):G1Lparam(1, 128, 98, 235),
 	}
 
@@ -153,9 +162,10 @@ CF_TO_GRIB2 = {	CFname("x_wind", None, "m s-1"):G2param(2, 0, 2, 2),
  	CFname("y_wind", None, "m s-1"):G2param(2, 0, 2, 3),
  	CFname(None, "cloud_mixing_ratio", "kg kg-1"):G2param(2, 0, 1, 22),
  	CFname(None, "convective_inhibition", "J kg-1"):G2param(2, 0, 7, 7),
- 	CFname(None, "grib_physical _atmosphere_albedo", 1):G2param(2, 0, 19, 1),
+ 	CFname(None, "grib_physical_atmosphere_albedo", 1):G2param(2, 0, 19, 1),
  	CFname(None, "grib_skin_temperature", "K"):G2param(2, 0, 0, 17),
  	CFname(None, "icao_standard_atmosphere_reference_height", "m"):G2param(2, 0, 3, 3),
  	CFname(None, "precipitable_water", "kg m-2"):G2param(2, 0, 1, 3),
  	CFname(None, "storm_relative_helicity", "J kg-1"):G2param(2, 0, 7, 8),
+    CFname("dew_point_temperature", None, "K"):G2param(2, 0, 0, 6),
 	}

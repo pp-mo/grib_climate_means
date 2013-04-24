@@ -58,6 +58,27 @@ def hack_forecast_times(cube):
         )
     cube.add_aux_coord(co_fp, 0)
 
+def make_output_gribfile_name(cube):
+    # calculate suitable filename
+    co_t = cube.coord('time')
+    min_year, max_year = [co_t.units.num2date(x).year
+                          for x in (co_t.bounds[0,0], co_t.bounds[-1,1])]
+    param_str = cube.name()
+    press_coords = cube.coords('pressure')
+    if len(press_coords) == 0:
+        level_str = ''
+    else:
+        pressure_value = press_coords[0].points[0]
+        level_str = '_p{:.0f}'.format(pressure_value)
+    gribfile_name_template = \
+        'ERAI_{minyr}to{maxyr}_MonthlyMean_{param}{level}.grib2'
+    gribfile_name = gribfile_name_template.format(
+        param=param_str,
+        level=level_str,
+        minyr=str(min_year),
+        maxyr=str(max_year))
+    return gribfile_name
+
 default_output_dirpath = '/net/home/h05/itpp/Iris/climate_means/temp_outputs/temp_realmeta'
 
 def main(output_dirpath=default_output_dirpath,
@@ -110,18 +131,7 @@ def main(output_dirpath=default_output_dirpath,
         if save_as_grib:
             print '  hacking level ..'
             hack_to_make_saveable(data_cube)
-            param_str = data_cube.name()
-            press_coords = data_cube.coords('pressure')
-            if len(press_coords) == 0:
-                level_str = ''
-            else:
-                pressure_value = press_coords[0].points[0]
-                level_str = '_p{:.0f}'.format(pressure_value)
-            gribfile_name_template = \
-                'ERAI_1981to2010_MonthlyMean_{param}{level}.grib2'
-            gribfile_name = gribfile_name_template.format(
-                param=param_str,
-                level=level_str)
+            gribfile_name = make_output_gribfile_name(data_cube)
             file_path = os.path.join(output_dirpath, gribfile_name)
             print '  saving to \'{}\' ...'.format(file_path)
             iris.save(data_cube, file_path)
@@ -130,28 +140,36 @@ def main(output_dirpath=default_output_dirpath,
 if __name__ == '__main__':
     test_series = None
     do_test_only = False
-    do_test_only = True
+#    do_test_only = True
     if do_test_only:
         do_each_param = False
-#        do_each_param = True
+        do_each_param = True
         if do_each_param:
             # do one of each parameter-code (but only one of multiple levels)
             test_series = csl.enumerate_all_results()
             test_series = [spec for spec in test_series
                            if spec[1] in (0.0, 850.0)]
+            # filter to those after a current-problem one ...
+            want_id_str = ''
+#            want_id_str = '2d'
+            i_interest = np.where(np.array(test_series)[:, 2] == want_id_str)
+            i_interest = i_interest[0]
+            if len(i_interest) > 0:
+                test_series = test_series[i_interest:]
         else:
             # do one of each 'class' (of calculation we have to make)
             test_series = [
-#                csl.pickout_spec(186),  # low-cloud (~"surface")
-#                csl.pickout_spec(151),  # mslp
-#                csl.pickout_spec(167),  # 2-metre temperature : gets height = 2.0m
-#                csl.pickout_spec(165),  # 10-metre u-wind : gets height = 10.0m
-#                csl.pickout_spec(166),  # 10-metre v-wind : gets height = 10.0m
-#                csl.pickout_spec(157, 850),  # rh on p=850
+                csl.pickout_spec(186),  # low-cloud (~"surface")
+                csl.pickout_spec(151),  # mslp
+                csl.pickout_spec(167),  # 2-metre temperature : gets height = 2.0m
+                csl.pickout_spec(165),  # 10-metre u-wind : gets height = 10.0m
+                csl.pickout_spec(166),  # 10-metre v-wind : gets height = 10.0m
+                csl.pickout_spec(157, 850),  # rh on p=850
 # some odd extras..
-#                csl.pickout_spec(141),  #  snow_depth
-#                csl.pickout_spec(59),   # CAPE
+                csl.pickout_spec(141),  #  snow_depth
+                csl.pickout_spec(59),   # CAPE
                 csl.pickout_spec(168),   # dewpoint
+                csl.pickout_spec(174),   # albedo
 
             ]
 
