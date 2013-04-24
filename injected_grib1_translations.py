@@ -9,6 +9,8 @@ Hacked version of 'simple_translations_grib1', to use "real" metadata info
  (from MH metadata engine)
 
 '''
+import warnings
+
 import numpy as np
 
 import grib_cf_map as grcf
@@ -24,14 +26,9 @@ GRIB1_TABLE2VERSIONS = {
 
 # NOTE: this code already 'interpreted' by grib.py from a number to a string
 GRIB1_CENTRECODES = {'ecmwf': 'ecmf',
-                     98: 'ecmf'
-                    }
+                     98: 'ecmf',
+                     }
 
-#
-# These probably don't belong here ?
-#
-##NOTE: these match terms in Andy's listfile -- see "grab_andys_file_summary.py"
-#GRIB1_LEVELTYPES = {'surface': 1, 'isobaricInhPa': 100}
 
 class Grib1Code(object):
     main_names = ['edition', 'table2version', 'centre', 'param',
@@ -49,6 +46,7 @@ class Grib1Code(object):
     def as_list(self):
         return [getattr(self, name) for name in self.all_names]
 
+
 class EcmwfLocalGrib1Code(Grib1Code):
     def __init__(self, param, longname, units,
                  edition=ECMWF_DEFAULT_GRIB1_EDITION,
@@ -65,12 +63,15 @@ class EcmwfLocalGrib1Code(Grib1Code):
             centre=centre,
             **kwargs)
 
+
 _GRIB1_CODE_TRANSLATIONS_LIST = []
+
 
 def add_ec_grib1(*args, **kwargs):
     global _GRIB1_CODE_TRANSLATIONS_LIST
     newcode = EcmwfLocalGrib1Code(*args, **kwargs)
     _GRIB1_CODE_TRANSLATIONS_LIST.append(newcode)
+
 
 # FOR NOW: cludge the set_height info for the few params it affects...
 def _ecmwf_local_grib1data_key(param, edition=1, t2version=128, centre=98):
@@ -81,11 +82,11 @@ def _ecmwf_local_grib1data_key(param, edition=1, t2version=128, centre=98):
     the constants we need to implement ecmwf-local-table
 
     """
-    return grcf.G1Lparam(
-                         edition=edition,
+    return grcf.G1Lparam(edition=edition,
                          t2version=t2version,
                          centre=centre,
                          iParam=param)
+
 
 _GRIB1_CODE_IMPLIED_LEVELS = {
     _ecmwf_local_grib1data_key(165): 10.0,  # 10m wind x
@@ -94,26 +95,50 @@ _GRIB1_CODE_IMPLIED_LEVELS = {
     _ecmwf_local_grib1data_key(168): 2.0,  # 2m dewpoint
 }
 
-# interpret whole of imported Grib1-to-CF table into our own format
-for (grib1data, cfdata) in grcf.GRIB1Local_TO_CF.iteritems():
+
+def _install_grib_cf_lookup(grib1data, cfdata, implied_dimcoord=None):
     units_as_string = str(cfdata.unit)
     centre_as_string = GRIB1_CENTRECODES[grib1data.centre]
-    set_height = _GRIB1_CODE_IMPLIED_LEVELS.get(
-        _ecmwf_local_grib1data_key(param=grib1data.iParam,
-                                   edition=grib1data.edition,
-                                   t2version=grib1data.t2version,
-                                   centre=grib1data.centre,
-                                   ),
-        np.NaN)
-    add_ec_grib1(
-        param=grib1data.iParam,
-        longname=cfdata.standard_name or cfdata.long_name,
-        units=units_as_string,
-        edition=grib1data.edition,
-        table2version=grib1data.t2version,
-        centre=centre_as_string,
-        set_height=set_height
-        )
+    set_height = np.NAN
+    if implied_dimcoord is not None:
+        err_prefix = ('Problem handling Grib1 conversion '
+                      + 'with implied coordinate {} :\n'.format(
+                          str(extra_dimcoord)))
+        if implied_dimcoord.standard_name != 'height':
+            warnings.warn(err_prefix +
+                          'Coordinate standard_name is "{}", but currently '
+                          'only recognise "height": Ignoring.'.format(
+                              implied_dimcoord.standard_name))
+        else:
+            if implied_dimcoord.units != 'm':
+                raise ValueError(err_prefix +
+                                 'Coordinate units is "{}", but can only '
+                                 'handle metres at present.'.format(
+                                     implied_dimcoord.units))
+            if len(implied_dimcoord.points) != 1:
+                raise ValueError(err_prefix +
+                                 'Coordinate has multiple points : {}\n'
+                                 'Only one point is currently '
+                                 'supported.'.format(
+                                     implied_dimcoord.points))
+            set_height = implied_dimcoord.points[0]
+    add_ec_grib1(param=grib1data.iParam,
+                 longname=cfdata.standard_name or cfdata.long_name,
+                 units=units_as_string,
+                 edition=grib1data.edition,
+                 table2version=grib1data.t2version,
+                 centre=centre_as_string,
+                 set_height=set_height)
+
+
+# Interpret whole of imported Grib1-to-CF table into our own format
+for (grib1data, cfdata) in grcf.GRIB1Local_TO_CF.iteritems():
+    _install_grib_cf_lookup(grib1data, cfdata)
+
+# Do the same for the special table specifying Grib1-to-CF with implied levels
+for (grib1data, (cfdata, extra_dimcoord)) \
+        in grcf.GRIB1LocalConstrained_TO_CF.iteritems():
+    _install_grib_cf_lookup(grib1data, cfdata, extra_dimcoord)
 
 # Convert to a recarray for easy searching.
 # NOTE: failed to create by concatenation -- bugs in numpy
@@ -141,7 +166,8 @@ def identify_grib1_key(edition, table2version, centre, param, debug=False):
         result = None
     if debug:
         r_str = str(result)
-        print 'STG1-identify: edition={} t2v={} centre={}, param={} ==> {}'.format(
+        print 'STG1-identify: edition={} t2v={} centre={}, param={} '
+        '==> {}'.format(
             edition, table2version, centre, param, r_str)
     return result
 
@@ -164,14 +190,14 @@ def test(debug=False):
         centre=GRIB1_CENTRECODES['ecmwf'],
         param=test_param,
         debug=debug)
-    assert testrec != None
+    assert testrec is not None
     assert testrec.longname == expected_name
     assert testrec.units == expected_units
     assert np.isnan(testrec.set_height)
 
     # Test ecmwf-specific call version
     testrec2 = identify_known_ecmwf_key(test_param, debug=True)
-    assert testrec2 != None
+    assert testrec2 is not None
     assert testrec.longname == expected_name
     assert testrec.units == expected_units
     assert np.isnan(testrec.set_height)
@@ -180,7 +206,7 @@ def test(debug=False):
 
     # Test implied-level case
     test_param = 165
-    expected_name = '10_metre_wind_x'
+    expected_name = 'x_wind'
     expected_units = 'm s-1'
     testrec = identify_grib1_key(
         edition=ECMWF_DEFAULT_GRIB1_EDITION,
@@ -188,7 +214,7 @@ def test(debug=False):
         centre=GRIB1_CENTRECODES['ecmwf'],
         param=test_param,
         debug=debug)
-    assert testrec != None
+    assert testrec is not None
     assert testrec.longname == expected_name
     assert testrec.units == expected_units
     assert testrec.set_height == 10.0
@@ -198,21 +224,71 @@ def test(debug=False):
     testrec = identify_known_ecmwf_key(test_param, debug=True)
     assert testrec is None
 
-    #
-    # rest not yet functional ...
-    #
-#        # test a set-height case
-#        add_ec_grib1(168, '__2m_dewpoint', 'K', set_height=2.0)
-#        test_param = 168  # 2m_dewpoint
-#        expected_name = ECMWF_GRIB1_LOCALCODE_NAME_PREFIX + '__2m_dewpoint'
-#        expected_units = 'K'
-#        expected_height = 2.0
-#        testrec = identify_known_ecmwf_key(test_param, debug=True)
-#        assert testrec != None
-#        assert testrec.longname == expected_name
-#        assert testrec.units == expected_units
-#        assert not np.isnan(testrec.set_height)
-#        assert testrec.set_height == expected_height
+    # Test error traps
+    def _testerr(call_fn, expect_err_str=None, no_catch=False, debug=False):
+        if no_catch:
+            call_fn()
+            if debug:
+                print 'TEST invocation succeeded.'
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                call_fn()
+            e = None
+        except Exception as e1:
+            e = e1
+        print 'TEST exception caught : ', e
+        if expect_err_str is '':
+            if e is None:
+                if debug:
+                    print 'TEST not failed -- as expected.'
+            else:
+                raise Exception('ERROR: test failed unexpectedly.')
+        elif expect_err_str is None:
+            if e is not None:
+                if debug:
+                    print 'TEST failed -- as expected.'
+            else:
+                raise Exception('ERROR: test succeeded unexpectedly.')
+        else:
+            if str(e) == expect_err_str:
+                if debug:
+                    print 'TEST failed with expected error.'
+            else:
+                raise Exception('ERROR: test succeeded unexpectedly.')
+
+    def _t1():
+        _install_grib_cf_lookup(grib1data=grcf.G1Lparam(1, 128, 98, 165),
+                                cfdata=grcf.CFname("x_wind", None, "m s-1"),
+                                implied_dimcoord=grcf.DimensionCoordinate(
+                                    "height", "m", (10,)))
+
+    _testerr(_t1, '')
+
+    def _t2():
+        _install_grib_cf_lookup(grib1data=grcf.G1Lparam(1, 128, 98, 165),
+                                cfdata=grcf.CFname("x_wind", None, "m s-1"),
+                                implied_dimcoord=grcf.DimensionCoordinate(
+                                    "pressure", "hPa", (10,)))
+
+    _testerr(_t2)
+
+    def _t3():
+        _install_grib_cf_lookup(grib1data=grcf.G1Lparam(1, 128, 98, 165),
+                                cfdata=grcf.CFname("x_wind", None, "m s-1"),
+                                implied_dimcoord=grcf.DimensionCoordinate(
+                                    "height", "ft", (10,)))
+
+    _testerr(_t3)
+
+    def _t4():
+        _install_grib_cf_lookup(grib1data=grcf.G1Lparam(1, 128, 98, 165),
+                                cfdata=grcf.CFname("x_wind", None, "m s-1"),
+                                implied_dimcoord=grcf.DimensionCoordinate(
+                                    "height", "m", (10, 20,)))
+
+    _testerr(_t4)
+
 
 if __name__ == '__main__':
     test(debug=True)

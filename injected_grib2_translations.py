@@ -15,6 +15,7 @@ import grib_cf_map as grcf
 
 import injected_grib1_translations as grib1_translate
 
+
 class Grib2Code(object):
     names = ['name',
              'discipline', 'parameterCategory', 'parameterNumber',
@@ -29,7 +30,9 @@ class Grib2Code(object):
     def as_list(self):
         return [getattr(self, name) for name in self.names]
 
+
 _GRIB2_NAME_TRANSLATIONS_LIST = []
+
 
 def add_grib2_translation(*args, **kwargs):
     newcode = Grib2Code(*args, **kwargs)
@@ -40,13 +43,12 @@ for cf_data, grib2_data in grcf.CF_TO_GRIB2.iteritems():
     # NOTE: for now, continue blurred difference between standard+long names
     if grib2_data.edition == 2:
         name = cf_data.standard_name or cf_data.long_name
-        add_grib2_translation(
-            discipline=grib2_data.discipline,
-            parameterCategory=grib2_data.category,
-            parameterNumber=grib2_data.number,
-            name=name,
-            units=cf_data.unit
-            )
+        add_grib2_translation(discipline=grib2_data.discipline,
+                              parameterCategory=grib2_data.category,
+                              parameterNumber=grib2_data.number,
+                              name=name,
+                              units=cf_data.unit)
+
 
 # Convert to a recarray for easy searching.
 # NOTE: failed to create by concatenation -- bugs in numpy
@@ -80,7 +82,7 @@ def test(debug=False):
                         'parameterNumber': 2,
                         'units': 'K'}
     testrec = identify_grib2_coding(test_name, debug=True)
-    assert testrec != None
+    assert testrec is not None
     for key, expected in expected_results.iteritems():
         got = getattr(testrec, key)
         assert got == expected, "value for {} expected={} got={}".format(
@@ -88,7 +90,7 @@ def test(debug=False):
 
     # test a missing one
     testrec = identify_grib2_coding('completely_made_up', debug=True)
-    assert testrec == None
+    assert testrec is None
 
 
 if __name__ == '__main__':

@@ -118,8 +118,8 @@ def main(output_dirpath=default_output_dirpath,
 
 if __name__ == '__main__':
     test_series = None
+    do_test_only = False
     do_test_only = True
-#    do_test_only = True
     if do_test_only:
         # one of each class
         test_series = [
@@ -134,6 +134,6 @@ if __name__ == '__main__':
 
     main(series_specs=test_series,
 #         load_from_cubes=False, save_as_cubes=True, save_as_grib=False
-         load_from_cubes=True, save_as_cubes=False, save_as_grib=True
-#         save_as_cubes=True
+#         load_from_cubes=True, save_as_cubes=False, save_as_grib=True
+         save_as_cubes=True
          )
