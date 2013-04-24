@@ -86,7 +86,6 @@ def main(output_dirpath=default_output_dirpath,
     if series_specs is None:
         series_specs = csl.enumerate_all_results()
     for param, level, target_id in series_specs:
-        gribfile_name = 'MonthlyMeans_{}.grib2'.format(target_id)
         cubefile_name = 'MonthlyMeans_{}.cube.pkl'.format(target_id)
         print '\nDoing : ', target_id
         if load_from_cubes:
@@ -99,6 +98,8 @@ def main(output_dirpath=default_output_dirpath,
             data_cube = csl.cube_for_param_and_level(param, level)
             print '  aggregating ..'
             data_cube = make_monthly_means_cube(data_cube)
+            print '  fix forecast periods ..'
+            hack_forecast_times(data_cube)
             print '  result ...'
             print data_cube
         if save_as_cubes:
@@ -107,10 +108,20 @@ def main(output_dirpath=default_output_dirpath,
             with open(file_path, 'w') as f:
                 pickle.dump(data_cube, f)
         if save_as_grib:
-            print '  fix forecast periods ..'
-            hack_forecast_times(data_cube)
             print '  hacking level ..'
             hack_to_make_saveable(data_cube)
+            param_str = data_cube.name()
+            press_coords = data_cube.coords('pressure')
+            if len(press_coords) == 0:
+                level_str = ''
+            else:
+                pressure_value = press_coords[0].points[0]
+                level_str = '_p{:.0f}'.format(pressure_value)
+            gribfile_name_template = \
+                'ERAI_1981to2010_MonthlyMean_{param}{level}.grib2'
+            gribfile_name = gribfile_name_template.format(
+                param=param_str,
+                level=level_str)
             file_path = os.path.join(output_dirpath, gribfile_name)
             print '  saving to \'{}\' ...'.format(file_path)
             iris.save(data_cube, file_path)
@@ -121,16 +132,28 @@ if __name__ == '__main__':
     do_test_only = False
     do_test_only = True
     if do_test_only:
-        # one of each class
-        test_series = [
-            csl.pickout_spec(157, 850),  # rh on p=850
-            csl.pickout_spec(186),  # low-cloud (~"surface")
-            csl.pickout_spec(151),  # mslp
-            csl.pickout_spec(167),  # 2-metre temperature : gets height = 2.0m
-            csl.pickout_spec(165),  # 10-metre u-wind : gets height = 10.0m
-#            csl.pickout_spec(166),  # 10-metre v-wind : gets height = 10.0m
-#            csl.pickout_spec(141),  #  snow_depth
-        ]
+        do_each_param = False
+#        do_each_param = True
+        if do_each_param:
+            # do one of each parameter-code (but only one of multiple levels)
+            test_series = csl.enumerate_all_results()
+            test_series = [spec for spec in test_series
+                           if spec[1] in (0.0, 850.0)]
+        else:
+            # do one of each 'class' (of calculation we have to make)
+            test_series = [
+#                csl.pickout_spec(186),  # low-cloud (~"surface")
+#                csl.pickout_spec(151),  # mslp
+#                csl.pickout_spec(167),  # 2-metre temperature : gets height = 2.0m
+#                csl.pickout_spec(165),  # 10-metre u-wind : gets height = 10.0m
+#                csl.pickout_spec(166),  # 10-metre v-wind : gets height = 10.0m
+#                csl.pickout_spec(157, 850),  # rh on p=850
+# some odd extras..
+#                csl.pickout_spec(141),  #  snow_depth
+#                csl.pickout_spec(59),   # CAPE
+                csl.pickout_spec(168),   # dewpoint
+
+            ]
 
     main(series_specs=test_series,
 #         load_from_cubes=False, save_as_cubes=True, save_as_grib=False
