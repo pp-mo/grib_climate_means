@@ -21,11 +21,17 @@
 import collections
 
 #
-# PP CHANGES + NOTES ....
+# PP OUTSTANDING PROBLEMS, CHANGES + NOTES ....
 #   * CAPE had 'Kg', which udunits rejects (wants lowercase "kg")
-#   * dewpoint was missing in both G1 and G2
-#   * "grib_physical _atmosphere_albedo" name has space in
-#   * Why do G1Lparam and G2param contain "edition"? --covered in the name
+#   * dewpoint was missing from both Grib1 and Grib2
+#   * "grib_physical _atmosphere_albedo" name had a space in it
+#   * ALBEDO in Grib2 should be a *percentage* (though fraction in Grib1 cases)
+#   * Why do G1Lparam and G2param contain an "edition" attribute ?
+#     -- surely this is already implied in the name?
+#
+# NOTE: have only edited the parts *used* for the climate-means project
+# i.e. GRIB1Local_TO_CF  and  CF_TO_GRIB2
+# other parts are now inconsistent
 #
 
 G2param = collections.namedtuple('G2param', ['edition', 'discipline',
@@ -162,7 +168,7 @@ CF_TO_GRIB2 = {	CFname("x_wind", None, "m s-1"):G2param(2, 0, 2, 2),
  	CFname("y_wind", None, "m s-1"):G2param(2, 0, 2, 3),
  	CFname(None, "cloud_mixing_ratio", "kg kg-1"):G2param(2, 0, 1, 22),
  	CFname(None, "convective_inhibition", "J kg-1"):G2param(2, 0, 7, 7),
- 	CFname(None, "grib_physical_atmosphere_albedo", 1):G2param(2, 0, 19, 1),
+ 	CFname(None, "grib_physical_atmosphere_albedo", "%"):G2param(2, 0, 19, 1),
  	CFname(None, "grib_skin_temperature", "K"):G2param(2, 0, 0, 17),
  	CFname(None, "icao_standard_atmosphere_reference_height", "m"):G2param(2, 0, 3, 3),
  	CFname(None, "precipitable_water", "kg m-2"):G2param(2, 0, 1, 3),
