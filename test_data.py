@@ -43,10 +43,10 @@ def main(output_dirpath=default_output_dirpath, series_specs=None):
 
         # load grib version
         name_stub = 'MonthlyMean_' + standard_name
-        if (level != 0):
-            name_stub += '_p{:.0f}'.format(level)
+        if (float(level) != 0.0):
+            name_stub += '_p{:.0f}'.format(float(level))
         if not np.isnan(csldata.set_height):
-            name_stub += '_h{:.0f}'.format(csldata.set_height)
+            name_stub += '_h{:.0f}'.format(float(csldata.set_height))
         name_stub += '.'
 #        print '    (SEARCH: {})'.format(name_stub)
         grib_paths = glob.glob(output_dirpath+'/*.grib2')
@@ -75,13 +75,21 @@ def main(output_dirpath=default_output_dirpath, series_specs=None):
 
 if __name__ == '__main__':
     do_all_types = True
-#    do_all_types = False
+    do_all_types = False
     if do_all_types:
         test_series = csl.enumerate_all_results()
         test_series = [spec for spec in test_series
                        if spec[1] in (0.0, 850.0)]
     else:
+        test_series = [
+            csl.pickout_spec(186),  # low-cloud (~"surface")
+            csl.pickout_spec(151),  # mslp
+            csl.pickout_spec(167),  # 2-metre temperature : gets height = 2.0m
+            csl.pickout_spec(165),  # 10-metre u-wind : gets height = 10.0m
+            csl.pickout_spec(166),  # 10-metre v-wind : gets height = 10.0m
+            csl.pickout_spec(157, 850),  # rh on p=850
+        ]
 #        test_series = [csl.pickout_spec(186)]  # low cloud
-        test_series = [csl.pickout_spec(130, 850)]  # air temp
+#        test_series = [csl.pickout_spec(130, 850)]  # air temp
 
     main(series_specs=test_series)
