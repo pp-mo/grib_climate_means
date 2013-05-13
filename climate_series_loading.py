@@ -15,12 +15,11 @@ import os
 import os.path
 
 import iris
+import iris.fileformats.grib.grib_phenom_translation as g1_to_nc
 
 # local modules
 import grab_andys_file_summary as gafs
 import test_basic_load_and_timings as blt
-
-from grib_translations import grib1_translate
 
 # private cache of gafs data
 _gribmsg_data_array = None
@@ -59,8 +58,10 @@ def files_and_constraint_for_param_and_level(param, level):
                         + 'Expected 360 results, got {} ?'.format(len(msgs)))
 #    param_num = int(param)
 #    constraint = iris.AttributeConstraint(indicatorOfParameter=param_num)
-    grib1_data = grib1_translate.identify_known_ecmwf_key(int(param))
-    constraint = iris.Constraint(grib1_data.longname)
+    
+    grib12nc_data = g1_to_nc.grib1_phenom_to_cf_info(128, 98, int(param))
+    name = grib12nc_data.standard_name or grib12nc_data.long_name
+    constraint = iris.Constraint(name)
     if len(levels) > 1:
         level_constraint = iris.Constraint(pressure=int(level))
         constraint = constraint & level_constraint

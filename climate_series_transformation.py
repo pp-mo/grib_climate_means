@@ -79,7 +79,8 @@ def make_output_gribfile_name(cube):
         maxyr=str(max_year))
     return gribfile_name
 
-default_output_dirpath = '/net/home/h05/itpp/Iris/climate_means/outputs'
+#default_output_dirpath = '/net/home/h05/itpp/Iris/climate_means/outputs'
+default_output_dirpath = '/net/home/h05/itpp/Iris/climate_means/climate_means_code2/temp_output_dir'
 
 def main(output_dirpath=default_output_dirpath,
          series_specs=None,
@@ -159,9 +160,9 @@ if __name__ == '__main__':
         else:
             # do one of each 'class' (of calculation we have to make)
             test_series = [
-#                csl.pickout_spec(186),  # low-cloud (~"surface")
+                csl.pickout_spec(186),  # low-cloud (~"surface")
 #                csl.pickout_spec(151),  # mslp
-#                csl.pickout_spec(167),  # 2-metre temperature : gets height = 2.0m
+                csl.pickout_spec(167),  # 2-metre temperature : gets height = 2.0m
 #                csl.pickout_spec(165),  # 10-metre u-wind : gets height = 10.0m
 #                csl.pickout_spec(166),  # 10-metre v-wind : gets height = 10.0m
 #                csl.pickout_spec(157, 850),  # rh on p=850
@@ -169,12 +170,12 @@ if __name__ == '__main__':
 ##                csl.pickout_spec(141),  #  snow_depth
 ##                csl.pickout_spec(59),   # CAPE
 ##                csl.pickout_spec(168),   # dewpoint
-                csl.pickout_spec(174),   # albedo
+#                csl.pickout_spec(174),   # albedo
 
             ]
 
     main(series_specs=test_series,
-#         load_from_cubes=False, save_as_cubes=True, save_as_grib=False
-         load_from_cubes=True, save_as_cubes=False, save_as_grib=True
+         load_from_cubes=False, save_as_cubes=True, save_as_grib=False
+#         load_from_cubes=True, save_as_cubes=False, save_as_grib=True
 #         save_as_cubes=True
          )

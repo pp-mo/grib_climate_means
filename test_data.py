@@ -12,6 +12,7 @@ import os.path
 import pickle
 
 import iris
+import iris.fileformats.grib.grib_phenom_translation as g1_to_nc
 
 # local modules
 import grab_andys_file_summary as gafs
@@ -20,15 +21,13 @@ import test_basic_load_and_timings as blt
 import climate_series_loading as csl
 import climate_series_transformation as cst
 
-from grib_translations import grib1_translate as gr1x
-
 default_output_dirpath = '/net/home/h05/itpp/Iris/climate_means/outputs'
 
-def main(output_dirpath=default_output_dirpath, series_specs=None):
+def main(test_series, output_dirpath=default_output_dirpath):
     for param, level, target_id in test_series:
-        csldata = gr1x.identify_known_ecmwf_key(int(param))
-        standard_name = csldata.longname
-        print '\nDOING: "{}", standard_name = ({})'.format(target_id,  standard_name)
+        g1_to_nc_data = g1_to_nc.grib1_phenom_to_cf_info(128, 98, int(param))
+        name = g1_to_nc_data.standard_name or g1_to_nc_data.long_name
+        print '\nDOING: "{}", standard_name = ({})'.format(target_id,  name)
         # load pickled version
         cubefile_name = 'MonthlyMeans_{}.cube.pkl'.format(target_id)
 #        print '\nDoing : ', target_id
@@ -42,11 +41,12 @@ def main(output_dirpath=default_output_dirpath, series_specs=None):
         print '      data range : ', (np.min(data_reduced), np.max(data_reduced))
 
         # load grib version
-        name_stub = 'MonthlyMean_' + standard_name
+        name_stub = 'MonthlyMean_' + name
         if (float(level) != 0.0):
             name_stub += '_p{:.0f}'.format(float(level))
-        if not np.isnan(csldata.set_height):
-            name_stub += '_h{:.0f}'.format(float(csldata.set_height))
+        height = g1_to_nc_data.set_height
+        if height is not None and not np.isnan(height):
+            name_stub += '_h{:.0f}'.format(float(height))
         name_stub += '.'
 #        print '    (SEARCH: {})'.format(name_stub)
         grib_paths = glob.glob(output_dirpath+'/*.grib2')
@@ -92,4 +92,4 @@ if __name__ == '__main__':
 #        test_series = [csl.pickout_spec(186)]  # low cloud
 #        test_series = [csl.pickout_spec(130, 850)]  # air temp
 
-    main(series_specs=test_series)
+    main(test_series)
